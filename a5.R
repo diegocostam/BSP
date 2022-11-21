@@ -35,3 +35,34 @@ int_clientela <- int_clientela %>% rename(Clinica = `...1`) %>%
   mutate(Mes = factor(Mes, levels = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
                                       "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"))) %>%
   arrange(Mes)
+
+# Tipos de Internação
+
+
+
+# Indicadores Hospitalares -----------------------------------------------
+
+ind_inter <- data.frame()
+
+for (i in 1:length(data_names)) {
+  
+  data <- read_excel(data_names[i], sheet = 5, range = "J47:Q47", col_names = FALSE)
+  data2 <- read_excel(data_names[i], sheet = 5, range = "J4:Q4")
+
+  colnames(data) <- colnames(data2)
+  
+  data <- data %>% pivot_longer(cols = 1:8, names_to = "Indicadores", values_to = "Valores")
+
+  data$Mes <- substr(sub(".*V - ", "", data_names[i]), 1 , 3)
+  data$Ano <- substr(sub(".*V - ", "", data_names[i]), 5 , 8)
+
+  ind_inter <- rbind(ind_inter, data)
+
+}
+
+# Fazendo ajustes nos dados
+ind_inter <- ind_inter %>%
+  mutate(Mes = factor(Mes, levels = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                      "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"))) %>%
+  arrange(Mes)
+

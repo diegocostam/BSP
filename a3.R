@@ -128,13 +128,24 @@ for (i in 1:length(data_names)) {
   
 }
 
+# Criando uma função para arredondar .5
+
+round2 = function(x, digits) {
+  posneg = sign(x)
+  z = abs(x)*10^digits
+  z = z + 0.5 + sqrt(.Machine$double.eps)
+  z = trunc(z)
+  z = z/10^digits
+  z*posneg
+}
+
 # Fazendo ajustes nos dados
 abs <- abs %>% rename(clinicas = `...1`) %>% 
   clean_names() %>%
   mutate(mes = factor(mes, levels = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
                                       "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"))) %>%
   arrange(mes) %>%
-  mutate(abs = paste(round(faltas_a_consultas/consultas_agendadas*100, 2), "%", sep = "") %>% 
+  mutate(abs = paste(round2(faltas_a_consultas/consultas_agendadas*100, digits = 0), "%", sep = "") %>% 
            str_replace_all("NA%", "NA")) %>%
   select(!c(faltas_a_consultas, consultas_agendadas)) %>% 
   pivot_wider(names_from = mes, values_from = abs)

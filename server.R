@@ -18,6 +18,7 @@ source('a1.R', local = TRUE)
 source('a2.R', local = TRUE)
 source('a3.R', local = TRUE)
 source('a5.R', local = TRUE)
+source('a6.R', local = TRUE)
 
 # APP SHINY
 
@@ -70,20 +71,39 @@ shinyServer(function(input, output) {
     })
     
     rh_trat_tec <- reactive({
-        prof_mes_rh_tec() %>%
-            select(!c(Mes, Ano)) %>%
-            pivot_wider(names_from = Funcao_Tecnica, values_from = Quantitativo)
+        if (length(input$prof_filtro) == 0 | length(input$meses_rh) == 0) {
+            return()
+        } else {
+            prof_mes_rh_tec() %>%
+                select(!c(Mes, Ano)) %>%
+                pivot_wider(names_from = Funcao_Tecnica, values_from = Quantitativo) %>% 
+                mutate(TOTAL = select(.,`CSM / CAM(QT) / CAP / CFN`:OUTROS) %>% 
+                           apply(1, sum, na.rm=TRUE))
+        }
+    })
+    
+    rh_trat_tec_tot <- reactive({
+        if(length(input$prof_filtro) == 0 | length(input$meses_rh) == 0){
+            return()
+        } else {
+            
+            TOTAL <- rh_trat_tec() %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- tibble(profissao="TOTAL", TOTAL)
+            
+            rbind(rh_trat_tec(), TOTAL)
+        }
     })
     
     output$tab_rh_tec <- renderTable(
-        rh_trat_tec(), digits = 0
+        rh_trat_tec_tot(), digits = 0
     )
     
     # Download do efetivo por função técnica
     output$download_rh_tec <- downloadHandler(
         filename = function(){"tabela.xlsx"}, 
         content = function(fname){
-            writexl::write_xlsx(rh_trat_tec(), fname)
+            writexl::write_xlsx(rh_trat_tec_tot(), fname)
         }
     )
 
@@ -146,20 +166,40 @@ shinyServer(function(input, output) {
     })
     
     rh_trat_adm <- reactive({
-        prof_mes_rh_adm() %>%
-            select(!c(Mes, Ano)) %>%
-            pivot_wider(names_from = Funcao_Administrativa, values_from = Quantitativo)
+        if (length(input$prof_filtro) == 0 | length(input$meses_rh) == 0) {
+            return()
+        } else {
+            prof_mes_rh_adm() %>%
+                select(!c(Mes, Ano)) %>%
+                pivot_wider(names_from = Funcao_Administrativa, values_from = Quantitativo) %>% 
+                mutate(TOTAL = select(.,`CSM / CAM(QT) / CAP / CFN`:OUTROS) %>% 
+                           apply(1, sum, na.rm=TRUE))
+        }
+    })
+    
+    
+    rh_trat_adm_tot <- reactive({
+        if(length(input$prof_filtro) == 0 | length(input$meses_rh) == 0){
+            return()
+        } else {
+            
+            TOTAL <- rh_trat_adm() %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- tibble(profissao="TOTAL", TOTAL)
+            
+            rbind(rh_trat_adm(), TOTAL)
+        }
     })
     
     output$tab_rh_adm <- renderTable(
-        rh_trat_adm(), digits = 0
+        rh_trat_adm_tot(), digits = 0
     )
     
     # Download do efetivo por função administrativa
     output$download_rh_adm <- downloadHandler(
         filename = function(){"tabela.xlsx"}, 
         content = function(fname){
-            writexl::write_xlsx(rh_trat_adm(), fname)
+            writexl::write_xlsx(rh_trat_adm_tot(), fname)
         }
     )
 
@@ -341,7 +381,8 @@ shinyServer(function(input, output) {
     # Transformando os meses de valor de uma célula para coluna do data.frame
     mes_cli_aten_amb_wid <- reactive({
         if (input$checkbox == TRUE) {
-            pivot_wider(mes_cli_aten_amb(), names_from = Mes, values_from = Atendimentos)
+            pivot_wider(mes_cli_aten_amb(), names_from = Mes, values_from = Atendimentos) %>% 
+                mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
         } else{
             mes_cli_aten_amb()
         }
@@ -424,10 +465,23 @@ shinyServer(function(input, output) {
         
     })
     
+    cli_par_amb_tot <- reactive({
+        if(length(input$pmc_f) == 0){
+            return()
+        } else {
+            
+            TOTAL <- cli_par_amb() %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- data.frame(clinica="TOTAL", TOTAL)
+            
+            rbind(cli_par_amb(), TOTAL)
+        }
+    })
+    
     # Saida da tabela Índice Ambulatorial número de pareceres
     output$par_amb_tab <- renderTable({
         
-        cli_par_amb()}, digits = 0, caption = "Pareceres ambulatoriais",
+        cli_par_amb_tot()}, digits = 0, caption = "Pareceres ambulatoriais",
         caption.placement = getOption("xtable.caption.placement"), 
         caption.width = getOption("xtable.caption.width", NULL)
         
@@ -437,7 +491,7 @@ shinyServer(function(input, output) {
     output$download_par_amb <- downloadHandler(
         filename = function(){"tabela.xlsx"}, 
         content = function(fname){
-            writexl::write_xlsx(cli_par_amb(), fname)
+            writexl::write_xlsx(cli_par_amb_tot(), fname)
         }
     )
     
@@ -582,5 +636,333 @@ shinyServer(function(input, output) {
         
     })
     
+    # Criando a tabela filtrada por clínicas e mês
+    mes_cli_int <- reactive({
+        if (length(input$meses_inter) == 0 | length(input$clinica_int_clientela_filtro) == 0) {
+            return()
+        } else {
+            data_clinica_int_cli() %>% filter(Mes %in% input$meses_inter)
+        }
+        
+    })
+    
+    # Transformando os meses de valor de uma célula para coluna do data.frame
+    mes_cli_int_wid <- reactive({
+        
+            pivot_wider(mes_cli_int(), names_from = Mes, values_from = Internacao) %>% 
+            mutate(TOTAL =  select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        
+        
+    })
+    
+    # Criando a tabela filtrada por clínicas e mês e clientela
+    mes_cli_int_wid2 <- reactive({
+        if (length(input$clientela_int_filtro) == 0 | length(input$meses_inter) == 0 | length(input$clinica_int_clientela_filtro) == 0) {
+            return()
+        } else {
+            mes_cli_int_wid() %>% filter(Clientela %in% input$clientela_int_filtro)
+        }
+        
+    })
+    
+    
+    # Saida da tabela Internação Clientela
+    output$int_cli_tab <- renderTable(
+        
+        mes_cli_int_wid2(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_int_cli <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(mes_cli_int_wid2(), fname)
+        }
+    )
+    
+## Clientela da Internação ------------------------------------------------
+    
+    # Filtro do ano
+    output$ano_tipo_inter <- renderUI({
+        pickerInput("ano_tipo_inter_filtro", h4("Selecione o ano:"),
+                    choices = unique(int_clientela$Ano) %>% sort(),
+                    selected = unique(int_clientela$Ano)[1],
+                    multiple = FALSE)
+    })
+    
+    # Usando o filtro geral do ano
+    data_ano_tipo_inter <- reactive({
+        if (length(input$ano_tipo_inter_filtro) == 0) {
+            return()
+        } else {
+            int_clientela %>% filter(Ano %in% input$ano_tipo_inter_filtro) %>% select(!Ano)
+        }
+        
+    })
+    
+    # Criando a tabela filtrada por clínicas e mês
+    mes_tipo_int <- reactive({
+        if (length(input$meses_tipo_inter) == 0 | length(input$ano_tipo_inter_filtro) == 0) {
+            return()
+        } else {
+            data_ano_tipo_inter() %>% filter(Mes %in% input$meses_tipo_inter)
+        }
+        
+    })
+    
+    # Transformando os meses de valor de uma célula para coluna do data.frame
+    mes_tipo_int_wid <- reactive({
+        
+        if(length(input$meses_tipo_inter) == 0 | length(input$ano_tipo_inter_filtro) == 0){
+            return()
+        } else {
+            a <- pivot_wider(mes_tipo_int(), names_from = Mes, values_from = Internacao) %>% 
+                filter(Clientela == "TOTAL") %>% select(!Clientela)
+            
+            cir <- a %>% filter(Clinica %in% c("2- CIRURGIA BUCO-MAXILO FACIAL", "4- CIRURGIA CARDÍACA", "5- CIRURGIA GERAL",
+                                               "7- CIRURGIA PLÁSTICA", "8- CIRURGIA TORÁCICA","9- CIRURGIA VASCULAR",
+                                               "15- GINECOLOGIA", "20- NEUROCIRURGIA", "23- OFTALMOLOGIA", "25- OTORRINOLARINGOLOGIA",
+                                               "28- PROCTOLOGIA", "31- TRAUMATO-ORTOPEDIA", "32- UROLOGIA")) %>% 
+                summarise_if(is.numeric, sum, na.rm = TRUE)
+            ob <- a %>% filter(Clinica %in% c("22- OBSTETRÍCIA")) %>% 
+                summarise_if(is.numeric, sum, na.rm = TRUE)
+            ped <- a %>% filter(Clinica %in% c("26- PEDIATRIA")) %>% 
+                summarise_if(is.numeric, sum, na.rm = TRUE)
+            nc <- a %>% filter(Clinica %in% c("1- CARDIOLOGIA", "10- CLÍNICA MÉDICA", "11- DERMATOLOGIA",
+                                              "12- DOENÇAS INFECCIOSAS E PARASITÁRIAS (DIP)", "13- ENDOCRINOLOGIA",
+                                              "14- GASTROENTEROLOGIA", "16- GERIATRIA", "17- HEMATOLOGIA",
+                                              "18- MEDICINA NUCLEAR", "19- NEFROLOGIA", "21- NEUROLOGIA",
+                                              "24- ONCOLOGIA", "27- PNEUMOLOGIA", "30- REUMATOLOGIA")) %>% 
+                summarise_if(is.numeric, sum, na.rm = TRUE)
+            cf <- a %>% filter(Clinica %in% c("33- UTI", "34- UTI PEDIÁTRICO", "35- UTI NEONATAL",
+                                              "36- UNIDADE DE TRATAMENTO DE QUEIMADOS (UTQ)",
+                                              "37- UNIDADE CORONARIANA (UC)", "38- UNIDADE DE PACIENTE GRAVE (UPG)",
+                                              "39- UNIDADE INTERMEDIÁRIA (UI)", "40- OUTROS", "EMERGÊNCIA")) %>% 
+                summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            Tipo <- c("CLÍNICAS CIRÚRGICAS MENOS OBSTETRÍCIA", "OBSTETRÍCIA",
+                      "PEDIÁTRICA", "CLÍNICAS NÃO CIRÚRGICAS", "UNIDADES FECHADAS")
+            
+            b <- rbind(cir, ob, ped, nc, cf)
+            
+            c <- cbind(Tipo, b)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- data.frame(Tipo="TOTAL", TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+        
+    })
+
+    # Saida da tabela Internação Clientela
+    output$int_tipo_tab <- renderTable(
+        
+        mes_tipo_int_wid(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_int_tipo <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(mes_tipo_int_wid(), fname)
+        }
+    )
+    
+
+## Indicadores Hospitalares ------------------------------------------------
+
+    output$ano_ind <- renderUI({
+        pickerInput("ano_ind_filtro", h4("Selecione o ano:"),
+                    choices = unique(ind_inter$Ano) %>% sort(),
+                    selected = unique(ind_inter$Ano)[1],
+                    multiple = FALSE)
+    })
+    
+    
+    
+### Indicadores de Internação ----------------------------------------------
+    
+    data_ano_ind_int <- reactive({
+        ind_inter %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
+    })
+    
+    data_mes_ind_int <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            data_ano_ind_int() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    data_mes_ind_wid <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            pivot_wider(data_mes_ind_int(), names_from = Mes, values_from = Valores)
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$ind_tab <- renderTable(
+        
+        data_mes_ind_wid(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_ind <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(data_mes_ind_wid(), fname)
+        }
+    )
+    
+
+### Outros indicadores de internação ----------------------------------------------------
+    
+    oii_ano <- reactive({
+        ind_inter_outros %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
+    })
+    
+    oii_ano_mes <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            oii_ano() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    oii_ano_mes_t <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            c <- pivot_wider(oii_ano_mes(), names_from = Mes, values_from = Valor)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- data.frame(Tipo="TOTAL", TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$oii_tab <- renderTable(
+        
+        oii_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_oii <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(oii_ano_mes_t(), fname)
+        }
+    )
+    
+### Indicadores hospitalares ----------------------------------------------------
+    
+    
+    
+### Partos e Nascimento ----------------------------------------------------
+
+    # Parto
+    parto_ano <- reactive({
+        ind_parto %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
+    })
+    
+    parto_ano_mes <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            parto_ano() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    parto_ano_mes_t <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            c <- pivot_wider(parto_ano_mes(), names_from = Mes, values_from = Quantidade)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- data.frame(Partos="TOTAL", TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$parto_tab <- renderTable(
+        
+        parto_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_parto <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(parto_ano_mes_t(), fname)
+        }
+    )
+    
+    # Nascimento
+    nascimento_ano <- reactive({
+        ind_nascimento %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
+    })
+    
+    nascimento_ano_mes <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            nascimento_ano() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    nascimento_ano_mes_t <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            c <- pivot_wider(nascimento_ano_mes(), names_from = Mes, values_from = Quantidade)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- data.frame(Nascimentos="TOTAL", TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$nascimento_tab <- renderTable(
+        
+        nascimento_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_nascimento <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(nascimento_ano_mes_t(), fname)
+        }
+    )
+    
+### Procedimentos Cirúgicos ------------------------------------------------    
+
+    # Mudar o ano_ind_filtro pq está igual ao renderUI ano_ind
+    output$ano_ind_cir <- renderUI({
+        pickerInput("ano_ind_filtro", h4("Selecione o ano:"),
+                    choices = unique(ind_inter$Ano) %>% sort(),
+                    selected = unique(ind_inter$Ano)[1],
+                    multiple = FALSE)
+    })
     
 })

@@ -135,11 +135,90 @@ navbarPage("Mapas de Serviços Produzidos",
                 tabPanel("INTERNAÇÃO",
                          sidebarLayout(
                              sidebarPanel(width = 3,
-                                          uiOutput("ano_int_clientela"),
-                                          uiOutput("clinica_int_clientela"),
-                                          uiOutput("int_clientela")
+                                          conditionalPanel(condition = "input.tabselected_int==1",
+                                                           uiOutput("ano_int_clientela"),
+                                                           pickerInput("meses_inter", h4("Selecione o(s) mês(es):"),
+                                                                       choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                   "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                    "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       options = list(`actions-box` = TRUE),multiple = T),
+                                                           uiOutput("clinica_int_clientela"),
+                                                           uiOutput("clientela_int")
+                                          ),
+                                          conditionalPanel(condition = "input.tabselected_int==2",
+                                                           uiOutput("ano_tipo_inter"),
+                                                           pickerInput("meses_tipo_inter", h4("Selecione o(s) mês(es):"),
+                                                                       choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                   "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                    "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       options = list(`actions-box` = TRUE),multiple = T)
+                                          )
                              ),
-                             mainPanel()
-                         ))
-                         
+                             mainPanel(
+                                 tabsetPanel(
+                                     id = "tabselected_int",
+                                     tabPanel("Clínicas e Serviços", value = 1,
+                                              tableOutput("int_cli_tab"),
+                                              downloadButton("download_int_cli", "Baixar Planilha")
+                                              ),
+                                     tabPanel("Tipos de Internação", value = 2,
+                                              tableOutput("int_tipo_tab"),
+                                              downloadButton("download_int_tipo", "Baixar Planilha")
+                                              )
+                                 )
+                             )
+                         )),
+                tabPanel("INDICADORES HOSPITALARES",
+                         sidebarLayout(
+                             sidebarPanel(width = 3,
+                                          conditionalPanel(condition = "input.tabselected_ind==1",
+                                                           uiOutput("ano_ind"),
+                                                           pickerInput("meses_ind", h4("Selecione o(s) mês(es):"),
+                                                                       choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                   "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                    "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       options = list(`actions-box` = TRUE),multiple = T)
+                                          ),
+                                          conditionalPanel(condition = "input.tabselected_ind==2",
+                                                           uiOutput("ano_ind_cir"),
+                                                           pickerInput("meses_ind", h4("Selecione o(s) mês(es):"),
+                                                                       choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                   "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                                    "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                                       options = list(`actions-box` = TRUE),multiple = T))#,
+                                                           #uiOutput("clinica_cirurgia")
+                             ),
+                             mainPanel(
+                                 tabsetPanel(
+                                     id = "tabselected_ind",
+                                     tabPanel("Indicadores de Internação", value = 1,
+                                              tableOutput("ind_tab"),
+                                              downloadButton("download_ind", "Baixar Planilha")
+                                     ),
+                                     tabPanel("Outros indicadores de internação", value = 1,
+                                              tableOutput("oii_tab"),
+                                              downloadButton("downloas_oii", "Baixar Planilha")
+                                     ),
+                                     tabPanel("Indicadores hospitalares", value = 1#,
+                                              #tableOutput(""),
+                                              #downloadButton("", "Baixar Planilha")
+                                     ),
+                                     tabPanel("Partos e Nascimentos", value = 1,
+                                              tableOutput("parto_tab"),
+                                              downloadButton("download_parto", "Baixar Planilha"),
+                                              tableOutput("nascimento_tab"),
+                                              downloadButton("download_nascimento", "Baixar Planilha")
+                                     ),
+                                     tabPanel("Procedimentos Cirúrgicos", value = 1#,
+                                              #tableOutput(""),
+                                              #downloadButton("", "Baixar Planilha")
+                                     )
+                                 )
+                             )
+                         )
+                         )
 )
