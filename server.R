@@ -19,6 +19,7 @@ source('a2.R', local = TRUE)
 source('a3.R', local = TRUE)
 source('a5.R', local = TRUE)
 source('a6.R', local = TRUE)
+source('a7.R', local = TRUE)
 
 # APP SHINY
 
@@ -957,12 +958,50 @@ shinyServer(function(input, output) {
     
 ### Procedimentos Cirúgicos ------------------------------------------------    
 
-    # Mudar o ano_ind_filtro pq está igual ao renderUI ano_ind
-    output$ano_ind_cir <- renderUI({
-        pickerInput("ano_ind_filtro", h4("Selecione o ano:"),
-                    choices = unique(ind_inter$Ano) %>% sort(),
-                    selected = unique(ind_inter$Ano)[1],
-                    multiple = FALSE)
+    # Cirurgias
+    proc_cirur_ano <- reactive({
+        proc_cirurg %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
     })
+    
+    proc_cirur_ano_mes <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            proc_cirur_ano() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    proc_cirur_ano_mes_t <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            a <- proc_cirur_ano_mes() %>% transmute(`Clínicas cirúrgicas`, total = select(., 2:5) %>% rowSums(na.rm = TRUE), Mes)
+            c <- pivot_wider(a, names_from = Mes, values_from = total)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- tibble(`Clínicas cirúrgicas`="TOTAL", TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$cirur_tab <- renderTable(
+        
+        proc_cirur_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_cirur <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(proc_cirur_ano_mes_t(), fname)
+        }
+    )
+    
+    # Anestesias
+
     
 })

@@ -213,9 +213,9 @@ navbarPage("Mapas de Serviços Produzidos",
                                               tableOutput("nascimento_tab"),
                                               downloadButton("download_nascimento", "Baixar Planilha")
                                      ),
-                                     tabPanel("Procedimentos Cirúrgicos", value = 1#,
-                                              #tableOutput(""),
-                                              #downloadButton("", "Baixar Planilha")
+                                     tabPanel("Procedimentos Cirúrgicos", value = 1,
+                                              tableOutput("cirur_tab"),
+                                              downloadButton("download_cirur", "Baixar Planilha")
                                      )
                                  )
                              )
