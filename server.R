@@ -18,8 +18,8 @@ source('a1.R', local = TRUE)
 source('a2.R', local = TRUE)
 source('a3.R', local = TRUE)
 source('a5.R', local = TRUE)
-source('a6.R', local = TRUE)
 source('a7.R', local = TRUE)
+source('a6.R', local = TRUE)
 
 # APP SHINY
 
@@ -868,7 +868,46 @@ shinyServer(function(input, output) {
     
 ### Indicadores hospitalares ----------------------------------------------------
     
+    ih_ano <- reactive({
+        taxas %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
+    })
     
+    ih_ano_mes <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            ih_ano() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    ih_ano_mes_t <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            pivot_longer(ih_ano_mes(), cols = 2:11, names_to = "Indicadores", values_to = "taxa") %>% 
+                filter(Indicadores != "MÉDIA DE CENSO DIÁRIO (MCD)") %>% 
+                mutate(taxa = paste(round2(taxa, digits = 2), "%", sep = "")) %>%
+                bind_rows(., pivot_longer(ih_ano_mes(), cols = 2:11, names_to = "Indicadores", values_to = "taxa") %>%
+                              filter(Indicadores == "MÉDIA DE CENSO DIÁRIO (MCD)") %>%
+                              mutate(taxa = round2(taxa, digits = 2) %>% as.character())) %>%
+                pivot_wider(names_from = Mes, values_from = taxa)
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$ih_tab <- renderTable(
+        
+        ih_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_ih <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(ih_ano_mes_t(), fname)
+        }
+    )
     
 ### Partos e Nascimento ----------------------------------------------------
 

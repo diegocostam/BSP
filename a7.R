@@ -50,3 +50,4 @@ anestesia <- anestesia %>%
   mutate(Mes = factor(Mes, levels = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
                                       "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"))) %>%
   arrange(Mes)
+

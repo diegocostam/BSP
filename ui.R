@@ -203,9 +203,9 @@ navbarPage("Mapas de Serviços Produzidos",
                                               tableOutput("oii_tab"),
                                               downloadButton("downloas_oii", "Baixar Planilha")
                                      ),
-                                     tabPanel("Indicadores hospitalares", value = 1#,
-                                              #tableOutput(""),
-                                              #downloadButton("", "Baixar Planilha")
+                                     tabPanel("Indicadores hospitalares", value = 1,
+                                              tableOutput("ih_tab"),
+                                              downloadButton("download_ih", "Baixar Planilha")
                                      ),
                                      tabPanel("Partos e Nascimentos", value = 1,
                                               tableOutput("parto_tab"),
