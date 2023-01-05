@@ -23,13 +23,14 @@ for (i in 1:length(data_names)) {
   # cirúrgias
   data_all <- read_excel(data_names[i], sheet = 7, skip = 4)
   
-  cir <- data_all %>% select(c(1,5:8)) %>% slice(1:15) %>% rename(`Clínicas cirúrgicas` = `...1`, `Procedimentos cirúrgicos ambulatoriais` = `...8`)
+  cir <- data_all %>% select(c(1,5:8)) %>% slice(1:15) %>% rename(`Clínicas cirúrgicas` = `...1`, `Procedimentos cirúrgicos ambulatoriais` = `...8`) %>% mutate(TOTAL = select(., 2:5) %>% rowSums(na.rm = TRUE))
   
   cir$Mes <- substr(sub(".*V - ", "", data_names[i]), 1 , 3)
   cir$Ano <- substr(sub(".*V - ", "", data_names[i]), 5 , 8)
   
   # Anestesias
-  anes <- data_all %>% select(1,10:13) %>% slice(1:15) %>% rename(`Clínicas cirúrgicas` = `...1`)
+  anes <- data_all %>% select(1,10:13) %>% slice(1:15) %>% rename(`Clínicas cirúrgicas` = `...1`) %>% 
+    mutate(TOTAL = select(., 2:5) %>% rowSums(na.rm = TRUE))
   
   anes$Mes <- substr(sub(".*V - ", "", data_names[i]), 1 , 3)
   anes$Ano <- substr(sub(".*V - ", "", data_names[i]), 5 , 8)

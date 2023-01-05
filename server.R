@@ -996,7 +996,21 @@ shinyServer(function(input, output) {
     )
     
 ### Procedimentos Cirúgicos ------------------------------------------------    
-
+    
+    output$porte <- renderUI({
+        pickerInput("porte", h4("Selecione o porte da cirurgia em Procedimentos Cirúrgicos:"),
+                    choices = names(proc_cirurg)[2:6],
+                    selected = names(proc_cirurg)[2:6],
+                    options = list(`actions-box` = TRUE),multiple = T)
+    })
+    
+    output$anestesia <- renderUI({
+        pickerInput("anestesia", h4("Selecione o tipo de anestesia em Anestesias:"),
+                    choices = names(anestesia)[2:6],
+                    selected = names(anestesia)[2:6],
+                    options = list(`actions-box` = TRUE),multiple = T)
+    })
+    
     # Cirurgias
     proc_cirur_ano <- reactive({
         proc_cirurg %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
@@ -1014,13 +1028,16 @@ shinyServer(function(input, output) {
         if(length(input$meses_ind) == 0){
             return()
         } else {
-            a <- proc_cirur_ano_mes() %>% transmute(`Clínicas cirúrgicas`, total = select(., 2:5) %>% rowSums(na.rm = TRUE), Mes)
+            a <- proc_cirur_ano_mes() %>% pivot_longer(c("GDE.", "MED.", "PEQ.", "Procedimentos cirúrgicos ambulatoriais", "TOTAL"),
+                                                  names_to = "Porte", values_to = "total")
             c <- pivot_wider(a, names_from = Mes, values_from = total)
             
+            c <- c %>% filter(Porte %in% input$porte)
+             
             TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
-            
-            TOTAL <- tibble(`Clínicas cirúrgicas`="TOTAL", TOTAL)
-            
+             
+            TOTAL <- tibble(`Clínicas cirúrgicas`="TOTAL", Porte = "TODOS",TOTAL)
+             
             rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
         }
     })
@@ -1042,5 +1059,48 @@ shinyServer(function(input, output) {
     
     # Anestesias
 
+    anes_ano <- reactive({
+        anestesia %>% filter(Ano %in% input$ano_ind_filtro) %>% select(!Ano)
+    })
     
+    anes_ano_mes <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            anes_ano() %>% filter(Mes %in% input$meses_ind)
+        }
+    })
+    
+    anes_ano_mes_t <- reactive({
+        if(length(input$meses_ind) == 0){
+            return()
+        } else {
+            a <- anes_ano_mes() %>% pivot_longer(c("GERAL", "LOCAL", "BLOQUEIO", "OUTRAS", "TOTAL"),
+                                                       names_to = "Tipo", values_to = "total")
+            c <- pivot_wider(a, names_from = Mes, values_from = total)
+            
+            c <- c %>% filter(Tipo %in% input$anestesia)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- tibble(`Clínicas cirúrgicas`="TOTAL", Tipo = "TODOS",TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$anestesia_tab <- renderTable(
+        
+        anes_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_anestesia <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(anes_ano_mes_t(), fname)
+        }
+    )
 })

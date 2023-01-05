@@ -180,17 +180,19 @@ navbarPage("Mapas de Serviços Produzidos",
                                                                                    "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
                                                                        selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
                                                                                     "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
-                                                                       options = list(`actions-box` = TRUE),multiple = T)
+                                                                       options = list(`actions-box` = TRUE),multiple = T),
+                                                           uiOutput("porte"),
+                                                           uiOutput("anestesia")
                                           ),
                                           conditionalPanel(condition = "input.tabselected_ind==2",
-                                                           uiOutput("ano_ind_cir"),
-                                                           pickerInput("meses_ind", h4("Selecione o(s) mês(es):"),
-                                                                       choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
-                                                                                   "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
-                                                                       selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
-                                                                                    "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
-                                                                       options = list(`actions-box` = TRUE),multiple = T))#,
-                                                           #uiOutput("clinica_cirurgia")
+                                                           uiOutput("ano_ind_2"),
+                                                           # pickerInput("meses_ind", h4("Selecione o(s) mês(es):"),
+                                                           #             choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                           #                         "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                           #             selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                           #                          "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                           #             options = list(`actions-box` = TRUE),multiple = T)
+                                                           )
                              ),
                              mainPanel(
                                  tabsetPanel(
@@ -216,6 +218,10 @@ navbarPage("Mapas de Serviços Produzidos",
                                      tabPanel("Procedimentos Cirúrgicos", value = 1,
                                               tableOutput("cirur_tab"),
                                               downloadButton("download_cirur", "Baixar Planilha")
+                                     ),
+                                     tabPanel("Anestesias", value = 1,
+                                              tableOutput("anestesia_tab"),
+                                              downloadButton("download_anestesia", "Baixar Planilha")
                                      )
                                  )
                              )
