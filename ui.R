@@ -226,5 +226,15 @@ navbarPage("Mapas de Serviços Produzidos",
                                  )
                              )
                          )
+                         ),
+                tabPanel("NOSOLOGIAS",
+                         sidebarLayout(
+                             sidebarPanel(width = 3
+                                 
+                             ),
+                             mainPanel(
+                                 
+                             )
                          )
+                )
 )

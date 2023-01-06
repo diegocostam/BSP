@@ -1103,4 +1103,11 @@ shinyServer(function(input, output) {
             writexl::write_xlsx(anes_ano_mes_t(), fname)
         }
     )
+ 
+
+# A9 A10 e A11 ------------------------------------------------------------
+
+## NOSOLOGIAS --------------------------------------------------------------
+
+    
 })
