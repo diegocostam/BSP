@@ -20,6 +20,7 @@ source('a3.R', local = TRUE)
 source('a5.R', local = TRUE)
 source('a7.R', local = TRUE)
 source('a6.R', local = TRUE)
+source('a9-10-11.R', local = TRUE)
 
 # APP SHINY
 
@@ -1105,9 +1106,69 @@ shinyServer(function(input, output) {
     )
  
 
-# A9 A10 e A11 ------------------------------------------------------------
+# A9, A10 e A11 ------------------------------------------------------------
 
 ## NOSOLOGIAS --------------------------------------------------------------
 
+    output$ano_nosologia <- renderUI({
+        pickerInput("ano_nosologia", h4("Selecione o ano:"),
+                    choices = unique(nosologia$Ano) %>% sort(),
+                    selected = unique(nosologia$Ano)[1],
+                    multiple = FALSE)
+    })
     
+    output$grupo <- renderUI({
+        pickerInput("grupo", h4("Selecione o(s) grupo(s) de doença(s):"),
+                    choices = unique(nosologia$`GRUPOS DE DOENÇAS`) %>% sort(),
+                    selected = unique(nosologia$`GRUPOS DE DOENÇAS`)[1],
+                    options = list(`actions-box` = TRUE),multiple = T)
+    })
+    
+    # Ambulatorial
+    
+    nosologia_amb <- reactive({
+        nosologia %>% select(!c(`EMERGÊNCIA`, `INTERNAÇÃO`))
+    })
+    
+    nosologia_amb_ano <- reactive({
+        nosologia_amb() %>% filter(Ano %in% input$ano_nosologia) %>% select(!Ano)
+    })
+    
+    nosologia_amb_ano_mes <- reactive({
+        if(length(input$meses_nosologia) == 0){
+            return()
+        } else {
+            nosologia_amb_ano() %>% filter(Mes %in% input$meses_nosologia) %>% filter(`GRUPOS DE DOENÇAS` %in% input$grupo)
+        }
+    })
+    
+    nosologia_amb_ano_mes_t <- reactive({
+        if(length(input$meses_nosologia) == 0){
+            return()
+        } else {
+            
+            c <- nosologia_amb_ano_mes() %>% pivot_wider(names_from = Mes, values_from = AMBULATORIAL)
+            
+            TOTAL <- c %>% summarise_if(is.numeric, sum, na.rm = TRUE)
+            
+            TOTAL <- tibble(`GRUPOS DE DOENÇAS`="TOTAL", CID = "TODOS",TOTAL)
+            
+            rbind(c, TOTAL) %>% mutate(TOTAL = select_if(., is.numeric) %>%  rowSums(na.rm = TRUE))
+        }
+    })
+    
+    # Saida da tabela Internação Clientela
+    output$nosologia_tab <- renderTable(
+        
+        nosologia_amb_ano_mes_t(), digits = 0
+        
+    )
+    
+    # Download das consultas ambulatoriais
+    output$download_nosologia <- downloadHandler(
+        filename = function(){"tabela.xlsx"}, 
+        content = function(fname){
+            writexl::write_xlsx(nosologia_amb_ano_mes_t(), fname)
+        }
+    )
 })

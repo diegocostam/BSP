@@ -229,11 +229,23 @@ navbarPage("Mapas de Serviços Produzidos",
                          ),
                 tabPanel("NOSOLOGIAS",
                          sidebarLayout(
-                             sidebarPanel(width = 3
-                                 
+                             sidebarPanel(width = 3,
+                                          uiOutput("ano_nosologia"),
+                                          pickerInput("meses_nosologia", h4("Selecione o(s) mês(es):"),
+                                                      choices = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                  "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                      selected = c("JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+                                                                   "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"),
+                                                      options = list(`actions-box` = TRUE),multiple = T),
+                                          uiOutput("grupo")
                              ),
                              mainPanel(
-                                 
+                                 tabsetPanel(
+                                     tabPanel("Ambulatorial",
+                                              tableOutput("nosologia_tab"),
+                                              downloadButton("download_nosologia", "Baixar Planilha")
+                                     )
+                                 )
                              )
                          )
                 )
